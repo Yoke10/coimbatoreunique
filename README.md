@@ -91,3 +91,7 @@ rotaract-club-website/
 - Create additional pages (About, Team, Events, Gallery, etc.)
 - Implement Member Space with authentication
 - Add FAQ and Terms & Conditions pages
+=======
+# Unique_website
+This is the club website of Rotaract club of Coimbatore Unique
+>>>>>>> 53986a985115570397052a0edb00fad2346fdebc
