@@ -21,6 +21,7 @@ const EmailManager = () => {
     const [upcomingMessages, setUpcomingMessages] = useState([]);
     const [sentLogs, setSentLogs] = useState([]);
     const [config, setConfig] = useState({});
+    const [drafts, setDrafts] = useState([]); // Persistent Drafts
 
     // Compose State
     const [bulkRecipients, setBulkRecipients] = useState([]);
@@ -58,17 +59,19 @@ const EmailManager = () => {
 
     const loadData = async () => {
         try {
-            const [contactsData, configData, logsData, scheduledData] = await Promise.all([
+            const [contactsData, configData, logsData, scheduledData, draftsData] = await Promise.all([
                 firebaseService.getBirthdayContacts(),
                 firebaseService.getClubConfig(),
                 firebaseService.getSentLogs(),
-                firebaseService.getScheduledEmails()
+                firebaseService.getScheduledEmails(),
+                firebaseService.getBirthdayDrafts()
             ]);
 
             setContacts(contactsData || {});
             setConfig(configData || {});
             setSentLogs((logsData || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
             setScheduledEmails(scheduledData || []);
+            setDrafts(draftsData || []);
 
             // Members might be needed depending on usage, but for now focus on these
             // setMembers(...) logic was separate in original or I can re-add if needed but keeping minimal diff
@@ -76,10 +79,10 @@ const EmailManager = () => {
         } catch (e) { console.error(e); }
     };
 
-    // Trigger schedule calculation when contacts/logs change
+    // Trigger schedule calculation when contacts/logs/drafts change
     useEffect(() => {
         if (contacts) calculateUpcomingSchedule();
-    }, [contacts, members, sentLogs]); // Re-calc if logs change too
+    }, [contacts, members, sentLogs, drafts]);
 
     // --- LOGIC HELPERS ---
 
@@ -145,14 +148,17 @@ const EmailManager = () => {
                         l.type === 'birthday'
                     );
 
+                    // Check for Draft
+                    const draft = drafts.find(d => d.email === c.email && d.category === cat);
+
                     all.push({
                         ...c,
                         nextBirthday: nextBStr,
                         daysAway: diffDays,
                         category: cat,
                         isSent,
-                        subject: 'Happy Birthday!',
-                        body: `Happy Birthday ${c.name}!`
+                        subject: draft ? draft.subject : 'Happy Birthday!',
+                        body: draft ? draft.body : `Happy Birthday ${c.name}!`
                     });
                 }
             });
@@ -492,23 +498,56 @@ const EmailManager = () => {
     };
 
 
+    // --- NEW: Handle History Deletion ---
+    const handleDeleteLog = async (id) => {
+        if (!window.confirm("Delete this log entry?")) return;
+        try {
+            await firebaseService.deleteSentLog(id);
+            setSentLogs(prev => prev.filter(l => l.id !== id));
+            toast({ title: "Log Deleted", variant: "success" });
+        } catch (e) {
+            toast({ title: "Error", variant: "destructive" });
+        }
+    };
+
+    const handleClearHistory = async () => {
+        if (!window.confirm("Clear ENTIRE history? This cannot be undone.")) return;
+        try {
+            await firebaseService.clearSentLogs();
+            setSentLogs([]);
+            toast({ title: "History Cleared", variant: "success" });
+        } catch (e) {
+            toast({ title: "Error", variant: "destructive" });
+        }
+    };
+
     // --- NEW: Handle Drafts and Sending for Upcoming Messages ---
-    const handleSaveDraft = () => {
-        // Find message in upcoming messages and update it
-        // Note: This is client-side only draft until sent, unless we want to persist drafts to DB
-        // For now, we update the local state which resets on reload. 
+    const handleSaveDraft = async () => {
         if (!editingMsg) return;
 
-        const updated = upcomingMessages.map(msg => {
-            if (msg.email === editingMsg.email && msg.category === editingMsg.category) {
-                return { ...msg, subject: editSubject, body: editBody };
-            }
-            return msg;
-        });
+        try {
+            const draftPayload = {
+                email: editingMsg.email,
+                category: editingMsg.category,
+                subject: editSubject,
+                body: editBody,
+                updatedAt: new Date().toISOString()
+            };
 
-        setUpcomingMessages(updated);
-        setEditingMsg(null);
-        toast({ title: "Draft Updated", description: "Changes apply to this session only.", variant: "success" });
+            await firebaseService.saveBirthdayDraft(draftPayload);
+
+            // Update local drafts state to trigger re-calc
+            setDrafts(prev => {
+                const filtered = prev.filter(d => !(d.email === editingMsg.email && d.category === editingMsg.category));
+                return [...filtered, draftPayload];
+            });
+
+            setEditingMsg(null);
+            toast({ title: "Draft Saved", description: "Changes saved to database.", variant: "success" });
+        } catch (e) {
+            console.error(e);
+            toast({ title: "Save Failed", description: e.message, variant: "destructive" });
+        }
     };
 
     const handleSendBirthdayWish = async (msg) => {
@@ -531,6 +570,10 @@ const EmailManager = () => {
                 status: 'success'
             };
             await firebaseService.addSentLog(logEntry);
+
+            // Clean up draft if exists
+            await firebaseService.deleteBirthdayDraft(msg.email, msg.category);
+            setDrafts(prev => prev.filter(d => !(d.email === msg.email && d.category === msg.category)));
 
             // Update UI
             setUpcomingMessages(prev => prev.map(p =>
@@ -635,11 +678,22 @@ const EmailManager = () => {
                                 <div style={{ flex: 1 }}>
                                     <label className="admin-label">recipients (.xlsx)</label>
                                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                        <input type="file" accept=".xlsx" onChange={(e) => handleFileUpload(e, 'bulk')} className="admin-file-field" />
+                                        {/* Styled File Input */}
+                                        <label className="admin-btn-secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Upload size={16} /> Choose Excel File
+                                            <input type="file" accept=".xlsx" onChange={(e) => handleFileUpload(e, 'bulk')} style={{ display: 'none' }} />
+                                        </label>
+
                                         {bulkRecipients.length > 0 && (
-                                            <button onClick={() => setIsViewingList(true)} className="admin-btn-outline" style={{ display: 'flex', gap: '5px', padding: '8px 12px' }}>
-                                                <Eye size={14} /> {bulkRecipients.length} loaded
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '0.9rem', color: 'var(--admin-primary)' }}>{bulkRecipients.length} recipients</span>
+                                                <button onClick={() => { setBulkRecipients([]); setBulkColumns([]); }} className="action-btn delete" title="Clear List">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <button onClick={() => setIsViewingList(true)} className="admin-btn-outline" style={{ display: 'flex', gap: '5px', padding: '6px 10px', fontSize: '0.8rem' }}>
+                                                    <Eye size={14} /> View
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                     {bulkColumns.length > 0 && <p className="file-helper-text" style={{ marginTop: '0.5rem' }}>Variables: {bulkColumns.map(c => `{${c}}`).join(', ')}</p>}
@@ -705,8 +759,15 @@ const EmailManager = () => {
 
                 {activeTab === 'history' && (
                     <div className="admin-table-container">
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem' }}>
+                            {sentLogs.length > 0 && (
+                                <button onClick={handleClearHistory} className="admin-btn-destructive" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <Trash2 size={16} /> Clear All History
+                                </button>
+                            )}
+                        </div>
                         <table className="admin-table">
-                            <thead><tr><th>Time</th><th>To</th><th>Subject</th><th>Status</th></tr></thead>
+                            <thead><tr><th>Time</th><th>To</th><th>Subject</th><th>Status</th><th>Action</th></tr></thead>
                             <tbody>
                                 {sentLogs.map((log, i) => (
                                     <tr key={i}>
@@ -714,9 +775,14 @@ const EmailManager = () => {
                                         <td>{log.email}</td>
                                         <td>{log.subject}</td>
                                         <td>{log.status}</td>
+                                        <td>
+                                            <button onClick={() => handleDeleteLog(log.id)} className="action-btn delete" title="Delete Log">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
-                                {sentLogs.length === 0 && <tr><td colSpan="4" className="empty-state">No history</td></tr>}
+                                {sentLogs.length === 0 && <tr><td colSpan="5" className="empty-state">No history</td></tr>}
                             </tbody>
                         </table>
                     </div>

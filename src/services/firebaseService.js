@@ -441,9 +441,39 @@ export const firebaseService = {
         await setDoc(doc(db, 'birthday_contacts', 'data'), data);
     },
 
+    // --- BIRTHDAY DRAFTS (Persistence) ---
+    getBirthdayDrafts: () => firebaseService.getAll('birthday_drafts'),
+
+    saveBirthdayDraft: async (draft) => {
+        // draft: { email, subject, body, category }
+        // ID strategy: email_category (sanitized) to ensure uniqueness
+        const id = `${draft.email}_${draft.category}`.replace(/[^a-zA-Z0-9]/g, '_');
+        await setDoc(doc(db, 'birthday_drafts', id), draft);
+    },
+
+    deleteBirthdayDraft: async (email, category) => {
+        const id = `${email}_${category}`.replace(/[^a-zA-Z0-9]/g, '_');
+        await firebaseService.delete('birthday_drafts', id);
+    },
+
     getSentLogs: () => firebaseService.getAll(COLLECTIONS.SENT_LOGS),
     // For logging sent emails, we might need addSentLog
     addSentLog: (log) => firebaseService.add(COLLECTIONS.SENT_LOGS, log),
+
+    // NEW: Delete specific log
+    deleteSentLog: (id) => firebaseService.delete(COLLECTIONS.SENT_LOGS, id),
+
+    // NEW: Clear all logs
+    clearSentLogs: async () => {
+        const batch = writeBatch(db);
+        const snapshot = await getDocs(collection(db, COLLECTIONS.SENT_LOGS));
+        if (snapshot.empty) return;
+
+        snapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+    },
 
     getClubConfig: async () => {
         // Return object from 'config' doc
