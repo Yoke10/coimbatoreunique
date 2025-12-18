@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { PageFlip } from 'page-flip'
 import * as pdfjsLib from 'pdfjs-dist'
+import { firebaseService } from '../../services/firebaseService'
 
 // Set worker source
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
 
-const FlipbookViewer = ({ pdfUrl, onClose }) => {
+const FlipbookViewer = ({ pdfUrl, bulletinId, onClose }) => {
     const bookRef = useRef(null)
     const containerRef = useRef(null)
     const [pageFlip, setPageFlip] = useState(null)
@@ -145,20 +146,53 @@ const FlipbookViewer = ({ pdfUrl, onClose }) => {
                 setError(null)
                 bookRef.current.innerHTML = ""
 
-                let source;
-                // Handle Base64 vs URL
-                if (pdfUrl.startsWith('data:')) {
-                    const base64 = pdfUrl.split(',')[1];
-                    const binaryString = window.atob(base64);
-                    const len = binaryString.length;
-                    const bytes = new Uint8Array(len);
-                    for (let i = 0; i < len; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
+                let source = null;
+
+                // 1. Check if URL exists and is valid (not empty)
+                if (pdfUrl && (pdfUrl.startsWith('http') || pdfUrl.startsWith('data:'))) {
+                    const isBinary = pdfUrl.startsWith('data:');
+                    if (isBinary) {
+                        const base64 = pdfUrl.split(',')[1];
+                        const binaryString = window.atob(base64);
+                        const len = binaryString.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        source = bytes;
+                    } else {
+                        source = pdfUrl;
                     }
-                    source = bytes;
-                } else {
-                    source = pdfUrl;
                 }
+
+                // 2. Fallback: Fetch from Firestore Chunks
+                if (!source && bulletinId) {
+                    // setLoadingMessage("Downloading from Database (Chunks)...") // This line was commented out in the original instruction
+                    let base64chunks = await firebaseService.getPdfChunks(bulletinId);
+
+                    if (base64chunks) {
+                        console.log("Chunks fetched. Length:", base64chunks.length);
+                        try {
+                            // Detect if clean base64 or has prefix
+                            if (base64chunks.includes('base64,')) {
+                                base64chunks = base64chunks.split('base64,')[1];
+                            }
+
+                            const binaryString = window.atob(base64chunks);
+                            const len = binaryString.length;
+                            const bytes = new Uint8Array(len);
+                            for (let i = 0; i < len; i++) {
+                                bytes[i] = binaryString.charCodeAt(i);
+                            }
+                            source = bytes;
+                        } catch (e) {
+                            console.error("Base64 Decode Error:", e);
+                            throw new Error("Corrupted PDF data in database.");
+                        }
+                    }
+                }
+
+                if (!source) throw new Error("PDF source not found (No URL and No Chunks).");
 
                 // Get Document
                 const loadingTask = pdfjsLib.getDocument(source)

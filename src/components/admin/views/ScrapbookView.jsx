@@ -7,6 +7,7 @@ import { AdminInput, AdminFile } from '../common/FormComponents';
 import { fileToBase64, validateFile } from '../../../utils/fileHelpers';
 import '../layout/AdminLayout.css';
 
+
 const ScrapbookView = () => {
     const { toast } = useToast();
     const [items, setItems] = useState([]);
@@ -16,32 +17,91 @@ const ScrapbookView = () => {
     const [isEditing, setIsEditing] = useState(false);
 
     const [formData, setFormData] = useState({ title: '', date: '', poster: '', pdfUrl: '' });
+    const [filesToUpload, setFilesToUpload] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => { load(); }, []);
     const load = async () => setItems(await firebaseService.getScrapbooks());
 
     const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
     const handleFileChange = async (e, field, type) => {
         const file = e.target.files[0];
-        if (!file || !validateFile(file, type).valid) return;
-        try {
-            const base64 = await fileToBase64(file);
-            setFormData(prev => ({ ...prev, [field]: base64 }));
-        } catch { }
+        if (!file) return;
+
+        if (!validateFile(file, type).valid) {
+            toast({ title: "Invalid File", description: `Please select a valid ${type} file`, variant: "destructive" });
+            return;
+        }
+
+        // Store raw file for upload
+        setFilesToUpload(prev => ({ ...prev, [field]: file }));
+
+        // Preview logic
+        if (type === 'image') {
+            try {
+                const base64 = await fileToBase64(file);
+                setFormData(prev => ({ ...prev, [field]: base64 }));
+            } catch { }
+        } else {
+            // For PDF, show name as placeholder
+            setFormData(prev => ({ ...prev, [field]: file.name }));
+        }
     };
 
-    const openAdd = () => { setFormData({ title: '', date: '', poster: '', pdfUrl: '' }); setIsEditing(false); setIsFormModalOpen(true); };
-    const openEdit = (item) => { setFormData({ ...item }); setSelectedItem(item); setIsEditing(true); setIsFormModalOpen(true); };
+    const openAdd = () => {
+        setFormData({ title: '', date: '', poster: '', pdfUrl: '' });
+        setFilesToUpload({});
+        setIsEditing(false);
+        setIsFormModalOpen(true);
+    };
+
+    const openEdit = (item) => {
+        setFormData({ ...item });
+        setFilesToUpload({});
+        setSelectedItem(item);
+        setIsEditing(true);
+        setIsFormModalOpen(true);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
-            if (isEditing) await firebaseService.updateScrapbook(selectedItem.id, formData);
-            else await firebaseService.addScrapbook(formData);
-            toast({ title: "Success", variant: "success" });
+            let updatedData = { ...formData };
+
+            // Upload files first
+            if (Object.keys(filesToUpload).length > 0) {
+                toast({ title: "Uploading...", description: "Please wait while files are being uploaded." });
+
+                for (const [key, file] of Object.entries(filesToUpload)) {
+                    if (file) {
+                        try {
+                            const path = `scrapbooks/${Date.now()}_${file.name}`;
+                            const url = await firebaseService.uploadFile(file, path);
+                            updatedData[key] = url;
+                        } catch (uploadError) {
+                            console.error(`Failed to upload ${key}`, uploadError);
+                            toast({ title: "Upload Failed", description: `Failed to upload ${key}. Check console.`, variant: "destructive" });
+                            setIsSubmitting(false);
+                            return; // Stop submission
+                        }
+                    }
+                }
+            }
+
+            if (isEditing) await firebaseService.updateScrapbook(selectedItem.id, updatedData);
+            else await firebaseService.addScrapbook(updatedData);
+
+            toast({ title: "Success", description: "Scrapbook saved successfully", variant: "success" });
             setIsFormModalOpen(false);
             load();
-        } catch { toast({ title: "Error", variant: "destructive" }); }
+        } catch (error) {
+            console.error("Save Error:", error);
+            toast({ title: "Error", description: "Failed to save scrapbook.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDelete = async (id) => {
@@ -78,7 +138,9 @@ const ScrapbookView = () => {
                     <AdminFile label="Cover Image" accept="image/webp" onChange={(e) => handleFileChange(e, 'poster', 'image')} />
                     <AdminFile label="PDF File" accept="application/pdf" onChange={(e) => handleFileChange(e, 'pdfUrl', 'pdf')} />
                     <AdminInput name="pdfUrl" value={formData.pdfUrl} onChange={handleInputChange} placeholder="Or PDF URL" />
-                    <button type="submit" className="admin-btn-primary" style={{ marginTop: '1.5rem' }}>{isEditing ? "Update" : "Create"}</button>
+                    <button type="submit" className="admin-btn-primary" style={{ marginTop: '1.5rem' }} disabled={isSubmitting}>
+                        {isSubmitting ? "Uploading..." : (isEditing ? "Update" : "Create")}
+                    </button>
                 </form>
             </AdminModal>
 

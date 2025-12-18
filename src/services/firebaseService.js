@@ -2,7 +2,7 @@
 import { db, auth, storage } from '../firebase/config';
 import {
     collection, getDocs, addDoc, deleteDoc, doc, updateDoc, getDoc,
-    query, where, orderBy, setDoc, runTransaction
+    query, where, orderBy, setDoc, runTransaction, writeBatch, serverTimestamp
 } from 'firebase/firestore';
 import {
     signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence,
@@ -13,6 +13,7 @@ import {
     ref, uploadBytes, getDownloadURL, deleteObject
 } from 'firebase/storage';
 import { initializeApp, deleteApp } from 'firebase/app';
+import { fileToBase64 } from '../utils/fileHelpers';
 
 const COLLECTIONS = {
     EVENTS: 'events',
@@ -332,9 +333,96 @@ export const firebaseService = {
     // STORAGE HELPERS (New)
     uploadFile: async (file, path) => {
         if (!file) return null;
-        const storageRef = ref(storage, path || `uploads/${file.name}`);
-        await uploadBytes(storageRef, file);
-        return await getDownloadURL(storageRef);
+        try {
+            await firebaseService.waitForAuth();
+            console.log(`[Upload] Starting upload for ${file.name} to ${path}...`);
+            const storageRef = ref(storage, path || `uploads/${file.name}`);
+
+            // Create a timeout promise
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Upload timed out. Check CORS/Firewall.")), 15000)
+            );
+
+            // Race the upload against the timeout
+            const snapshot = await Promise.race([
+                uploadBytes(storageRef, file),
+                timeout
+            ]);
+
+            console.log(`[Upload] Upload completed. Fetching URL...`);
+            const url = await getDownloadURL(snapshot.ref);
+            console.log(`[Upload] URL fetched: ${url}`);
+            return url;
+        } catch (error) {
+            console.error(`[Upload] Failed for ${file.name}:`, error);
+            throw error;
+        }
+    },
+
+    // --- PDF CHUNKING (Firestore-only Strategy) ---
+    uploadPdfChunks: async (bulletinId, file) => {
+        try {
+            const dataUrl = await fileToBase64(file);
+            // STRIP PREFIX: Store only the raw Base64 string
+            // DataURL format: "data:application/pdf;base64,JVBERi..."
+            const base64 = dataUrl.split(',')[1];
+
+            if (!base64) throw new Error("Invalid file encoding");
+
+            // Chunk size: 500KB chars (approx 375KB binary) - Safe for Firestore
+            const chunkSize = 500 * 1024;
+            const totalChunks = Math.ceil(base64.length / chunkSize);
+
+            const batch = writeBatch(db);
+            const chunksRef = collection(db, `bulletins/${bulletinId}/pdf_chunks`);
+
+            // Delete old chunks if any (cleanup)
+            const oldChunks = await getDocs(chunksRef);
+            oldChunks.forEach(doc => batch.delete(doc.ref));
+
+            for (let i = 0; i < totalChunks; i++) {
+                const chunkData = base64.slice(i * chunkSize, (i + 1) * chunkSize);
+                const chunkDoc = doc(chunksRef, `chunk_${i}`);
+                batch.set(chunkDoc, {
+                    index: i,
+                    data: chunkData,
+                    uploadedAt: serverTimestamp()
+                });
+            }
+
+            await batch.commit();
+
+            // Mark bulletin as using chunks
+            await updateDoc(doc(db, "bulletins", bulletinId), {
+                pdfMode: 'chunks',
+                pdfUrl: '' // Clear URL to avoid confusion
+            });
+
+            return true;
+        } catch (error) {
+            console.error("Chunk Upload Failed:", error);
+            throw error;
+        }
+    },
+
+    getPdfChunks: async (bulletinId) => {
+        try {
+            const chunksRef = collection(db, `bulletins/${bulletinId}/pdf_chunks`);
+            const q = query(chunksRef, orderBy('index'));
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) return null;
+
+            let fullBase64 = '';
+            snapshot.forEach(doc => {
+                fullBase64 += doc.data().data;
+            });
+
+            return fullBase64;
+        } catch (error) {
+            console.error("Fetch Chunks Failed:", error);
+            return null;
+        }
     },
 
     // --- EMAIL MANAGER SUPPORT ---

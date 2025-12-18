@@ -61,6 +61,7 @@ const Bulletin = () => {
             {selectedBulletin && (
                 <FlipbookViewer
                     pdfUrl={selectedBulletin.pdfUrl}
+                    bulletinId={selectedBulletin.id} // Enable Firestore Chunk Fetching
                     onClose={() => setSelectedBulletin(null)}
                 />
             )}

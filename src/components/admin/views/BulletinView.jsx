@@ -4,7 +4,7 @@ import { firebaseService } from '../../../services/firebaseService';
 import { useToast } from '../../ui/Toast/ToastContext';
 import AdminModal from '../common/AdminModal';
 import { AdminInput, AdminFile } from '../common/FormComponents';
-import { fileToBase64, validateFile } from '../../../utils/fileHelpers';
+import { fileToBase64, validateFile, formatDriveLink } from '../../../utils/fileHelpers';
 import '../layout/AdminLayout.css';
 
 const BulletinView = () => {
@@ -31,23 +31,31 @@ const BulletinView = () => {
     const handleFileChange = async (e, field, type) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (!validateFile(file, type).valid) {
-            toast({ title: "Invalid File", description: `Please select a valid ${type} file.`, variant: "destructive" });
+
+        // Validation
+        const validation = validateFile(file, type);
+        if (!validation.valid) {
+            toast({ title: "Invalid File", description: validation.error || "Check file type", variant: "destructive" });
             return;
         }
 
-        // Store raw file for upload
-        setFilesToUpload(prev => ({ ...prev, [field]: file }));
-
-        // For preview purposes on images, we can still use a temp URL or base64
+        // IMAGE: Base64 (Database)
         if (type === 'image') {
+            if (file.size > 500 * 1024) {
+                toast({ title: "File too large", description: "Poster must be under 500KB", variant: "destructive" });
+                return;
+            }
             try {
                 const base64 = await fileToBase64(file);
                 setFormData(prev => ({ ...prev, [field]: base64 }));
             } catch { }
-        } else {
-            // For PDF, just show the name or keep existing URL if editing
-            setFormData(prev => ({ ...prev, [field]: file.name })); // Optional visual feedback
+        }
+
+        // PDF: Chunk Upload (Database)
+        // Store raw file for later chunking in handleSubmit
+        if (type === 'pdf') {
+            setFilesToUpload(prev => ({ ...prev, [field]: file }));
+            setFormData(prev => ({ ...prev, [field]: file.name })); // Visual Feedback
         }
     };
 
@@ -71,29 +79,28 @@ const BulletinView = () => {
         setIsSubmitting(true);
         try {
             let updatedData = { ...formData };
+            let docId = selectedItem?.id;
 
-            // Upload files if any
-            if (Object.keys(filesToUpload).length > 0) {
-                toast({ title: "Uploading...", description: "Please wait while files are being uploaded." });
-
-                for (const [key, file] of Object.entries(filesToUpload)) {
-                    if (file) {
-                        const path = `bulletins/${Date.now()}_${file.name}`;
-                        const url = await firebaseService.uploadFile(file, path);
-                        updatedData[key] = url;
-                    }
-                }
+            // 1. Create/Update Base Doc
+            if (isEditing) {
+                await firebaseService.updateBulletin(docId, updatedData);
+            } else {
+                const docRef = await firebaseService.addBulletin(updatedData);
+                docId = docRef.id;
             }
 
-            if (isEditing) await firebaseService.updateBulletin(selectedItem.id, updatedData);
-            else await firebaseService.addBulletin(updatedData);
+            // 2. Upload Chunks (If PDF selected)
+            if (filesToUpload.pdfUrl) {
+                toast({ title: "Uploading PDF...", description: "Optimizing and saving to database..." });
+                await firebaseService.uploadPdfChunks(docId, filesToUpload.pdfUrl);
+            }
 
             toast({ title: "Success", description: "Bulletin saved successfully", variant: "success" });
             setIsFormModalOpen(false);
             loadBulletins();
         } catch (error) {
             console.error(error);
-            toast({ title: "Error", description: "Failed to save bulletin.", variant: "destructive" });
+            toast({ title: "Error", description: error.message || "Failed to save bulletin.", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -134,8 +141,13 @@ const BulletinView = () => {
                     <AdminInput label="Title" name="title" value={formData.title} onChange={handleInputChange} required />
                     <AdminInput label="Month/Edition" name="month" value={formData.month} onChange={handleInputChange} required />
                     <AdminFile label="Cover Image" accept="image/webp" onChange={(e) => handleFileChange(e, 'poster', 'image')} />
-                    <AdminFile label="PDF File" accept="application/pdf" onChange={(e) => handleFileChange(e, 'pdfUrl', 'pdf')} />
-                    <AdminInput name="pdfUrl" value={formData.pdfUrl} onChange={handleInputChange} placeholder="Or PDF URL" />
+                    {/* CHANGED: File Input for PDF (Chunk Strategy) */}
+                    <AdminFile label="Bulletin PDF (Upload)" accept="application/pdf" onChange={(e) => handleFileChange(e, 'pdfUrl', 'pdf')} />
+
+                    {/* Visual Feedback for selected file */}
+                    {formData.pdfUrl && !formData.pdfUrl.startsWith('http') && (
+                        <p style={{ fontSize: '0.8rem', marginTop: '-10px', color: '#666' }}>Selected: {formData.pdfUrl}</p>
+                    )}
                     <button type="submit" className="admin-btn-primary" style={{ marginTop: '1.5rem' }} disabled={isSubmitting}>
                         {isSubmitting ? "Uploading..." : (isEditing ? "Update" : "Create")}
                     </button>
@@ -155,5 +167,6 @@ const BulletinView = () => {
         </div>
     );
 };
+
 
 export default BulletinView;

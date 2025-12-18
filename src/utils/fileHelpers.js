@@ -11,7 +11,7 @@ export const fileToBase64 = (file) => {
 
 export const validateFile = (file, type) => {
     const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
-    const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_PDF_SIZE = 25 * 1024 * 1024; // 25MB (Chunk Strategy handles this)
 
     if (type === 'image') {
         if (file.size > MAX_IMAGE_SIZE) return { valid: false, error: 'Image too large (Max 2MB)' };
@@ -22,4 +22,23 @@ export const validateFile = (file, type) => {
         if (file.type !== 'application/pdf') return { valid: false, error: 'Invalid format (PDF only)' };
     }
     return { valid: true };
+};
+
+export const extractDriveId = (url) => {
+    if (!url) return null;
+    const patterns = [
+        /\/file\/d\/([a-zA-Z0-9_-]+)/,
+        /id=([a-zA-Z0-9_-]+)/
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) return match[1];
+    }
+    return null;
+};
+
+export const formatDriveLink = (url) => {
+    const id = extractDriveId(url);
+    if (!id) return url;
+    return `https://drive.google.com/uc?export=download&id=${id}`;
 };
