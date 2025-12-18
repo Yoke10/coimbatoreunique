@@ -406,6 +406,12 @@ export const firebaseService = {
         }
     },
 
+    // --- SCHEDULED EMAILS (OUTBOX) ---
+    getScheduledEmails: () => firebaseService.getAll('scheduled_emails'),
+    addScheduledEmail: (emailData) => firebaseService.add('scheduled_emails', emailData),
+    updateScheduledEmail: (id, updates) => firebaseService.update('scheduled_emails', id, updates),
+    deleteScheduledEmail: (id) => firebaseService.delete('scheduled_emails', id),
+
     // --- EMAIL SERVICE ---
     sendEmail: async (to, subject, body) => {
         console.log(`[EMAIL SERVICE] Initiating send to ${to}...`)
