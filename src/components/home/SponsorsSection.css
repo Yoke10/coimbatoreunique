@@ -207,28 +207,47 @@
 }
 
 /* Responsive */
+/* Responsive */
+@media (max-width: 1024px) {
+    .sponsors-section-new .card {
+        height: 220px;
+        width: 220px;
+    }
+}
+
 @media (max-width: 768px) {
     .sponsors-section-new .card {
         height: 200px;
         width: 200px;
     }
 
+    .sponsors-section-new .slider-track {
+        gap: 30px;
+    }
+}
+
+@media (max-width: 425px) {
+    .sponsors-section-new .card {
+        height: 180px;
+        width: 180px;
+    }
+
     .sponsors-section-new .cover h1 {
-        font-size: 1.4em;
-        left: 20px;
-        bottom: 30px;
+        font-size: 1.2em;
+        left: 15px;
+        bottom: 25px;
     }
 
     .sponsors-section-new .cover .number {
-        font-size: 1.2em;
-        right: 20px;
-        top: 30px;
+        font-size: 1em;
+        right: 15px;
+        top: 25px;
     }
 
     .sponsors-section-new .cover:before {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
     }
 }

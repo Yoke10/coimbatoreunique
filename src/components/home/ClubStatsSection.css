@@ -173,24 +173,26 @@
     }
 }
 
-/* Responsive: stack on mobile, but single line on desktop as requested */
-@media (max-width: 900px) {
+/* Responsive */
+@media (max-width: 1024px) {
     .stats-section .stats-grid {
         flex-wrap: wrap;
-        /* Allow wrap on tablets/mobile */
         gap: 1.5rem;
     }
 
     .stats-section .stat-card {
         flex: 1 1 45%;
-        /* 2 per row on tablet */
         max-width: none;
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 425px) {
     .stats-section .stat-card {
         flex: 1 1 100%;
-        /* 1 per row on mobile */
+        padding: 1.5rem 1rem;
+    }
+
+    .stats-section .stat-number {
+        font-size: 2.5rem;
     }
 }

@@ -30,7 +30,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 425px) {
     .team-grid-section .team-grid-container {
         grid-template-columns: 1fr;
     }

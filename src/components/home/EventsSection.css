@@ -200,10 +200,10 @@
 /* View All Card Removed */
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .events-section .event-card {
         flex: 0 0 320px;
-        /* Stack on mobile */
+        /* Stack on mobile/tablet */
         flex-direction: column;
         /* Vertical layout */
         min-height: auto;

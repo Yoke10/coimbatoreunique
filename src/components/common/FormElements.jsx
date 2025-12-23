@@ -3,7 +3,7 @@ import React from 'react';
 export const InputGroup = ({ label, name, value, onChange, type = "text", placeholder, error, icon, required }) => {
     return (
         <div className="input-group">
-            {label && <label className="input-label">{label} {required && '*'}</label>}
+            {label && <label className="input-label" htmlFor={name}>{label} {required && '*'}</label>}
             <div className="input-wrapper">
                 {icon && (
                     <span className="input-icon">
@@ -12,6 +12,7 @@ export const InputGroup = ({ label, name, value, onChange, type = "text", placeh
                 )}
                 <input
                     type={type}
+                    id={name}
                     name={name}
                     value={value}
                     onChange={onChange}
@@ -28,7 +29,7 @@ export const InputGroup = ({ label, name, value, onChange, type = "text", placeh
 export const SelectGroup = ({ label, name, value, onChange, options, error, icon, required, placeholder = "Select Option" }) => {
     return (
         <div className="input-group">
-            {label && <label className="input-label">{label} {required && '*'}</label>}
+            {label && <label className="input-label" htmlFor={name}>{label} {required && '*'}</label>}
             <div className="input-wrapper">
                 {icon && (
                     <span className="input-icon">
@@ -36,6 +37,7 @@ export const SelectGroup = ({ label, name, value, onChange, options, error, icon
                     </span>
                 )}
                 <select
+                    id={name}
                     name={name}
                     value={value}
                     onChange={onChange}
@@ -56,8 +58,9 @@ export const SelectGroup = ({ label, name, value, onChange, options, error, icon
 export const TextAreaGroup = ({ label, name, value, onChange, placeholder, error, required }) => {
     return (
         <div className="input-group">
-            {label && <label className="input-label">{label} {required && '*'}</label>}
+            {label && <label className="input-label" htmlFor={name}>{label} {required && '*'}</label>}
             <textarea
+                id={name}
                 name={name}
                 value={value}
                 onChange={onChange}

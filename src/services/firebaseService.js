@@ -68,7 +68,8 @@ export const firebaseService = {
     },
 
     // GET SINGLE USER (by UID)
-    getUser: async (uid) => {
+    // GET SINGLE USER (by UID)
+    getUser: async (uid, authUser = null) => {
         // Wait for auth to be ready involves checking existing auth state
         // In the context flow, we might have the user object already, but safe to keep check.
         const ref = doc(db, COLLECTIONS.USERS, uid);
@@ -77,20 +78,31 @@ export const firebaseService = {
         if (!snap.exists()) {
             console.warn("User document not found in Firestore:", uid);
 
-            // Fallback: Check if the request is for the currently logged-in user
-            const currentUser = auth.currentUser;
-            if (currentUser && currentUser.uid === uid) {
-                console.log("Returning fallback user from Auth state");
-                return {
+            // Self-healing: Create the document if we have auth data
+            const userToUse = authUser || (auth.currentUser && auth.currentUser.uid === uid ? auth.currentUser : null);
+
+            if (userToUse) {
+                console.log("Self-healing: Creating missing Firestore profile for", uid);
+                const newProfile = {
                     id: uid,
-                    email: currentUser.email,
-                    username: currentUser.email ? currentUser.email.split('@')[0] : 'User',
+                    email: userToUse.email,
+                    username: userToUse.email ? userToUse.email.split('@')[0] : 'Member',
                     role: 'member', // Default safety role
+                    createdAt: new Date().toISOString(),
                     profile: {
-                        fullName: currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Unknown User'),
-                        email: currentUser.email
+                        fullName: userToUse.displayName || (userToUse.email ? userToUse.email.split('@')[0] : 'Member'),
+                        email: userToUse.email
                     }
                 };
+
+                try {
+                    await setDoc(ref, newProfile);
+                    return newProfile;
+                } catch (createError) {
+                    console.error("Failed to auto-create user profile:", createError);
+                    // Fallback to in-memory object if write fails
+                    return newProfile;
+                }
             }
 
             return null;

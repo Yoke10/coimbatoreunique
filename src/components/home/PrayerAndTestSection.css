@@ -214,6 +214,46 @@
     }
 
     .prayer-test-section .box {
-        margin: 60px 0;
+        width: 100%;
+        max-width: 400px;
+        /* Reduced for better mobile fit */
+        height: auto;
+        min-height: 400px;
+        margin: 20px 0;
+    }
+
+    /* Disable/Reduce complex hover effects on touch devices for performance */
+    .prayer-test-section .box::before,
+    .prayer-test-section .box::after {
+        transform: skewX(0);
+        /* Remove skew on mobile to prevent overflow */
+        left: 10px;
+        width: calc(100% - 20px);
+        opacity: 0.8;
+        /* Always visible slightly */
+    }
+
+    .prayer-test-section .box:hover::before,
+    .prayer-test-section .box:hover::after {
+        left: 0;
+        width: 100%;
+    }
+
+    .prayer-test-section .box .content {
+        padding: 2rem 1.5rem;
+        left: 0;
+        /* Align content normally */
+    }
+
+    .prayer-test-section .box:hover .content {
+        left: 0;
+        /* Disable shift on hover */
+        padding: 2rem 1.5rem;
+    }
+
+    /* Ensure hidden decor doesn't break layout */
+    .prayer-test-section .box:hover span::before,
+    .prayer-test-section .box:hover span::after {
+        display: none;
     }
 }

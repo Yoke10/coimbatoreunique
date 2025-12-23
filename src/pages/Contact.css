@@ -166,7 +166,8 @@
 /* Checkbox & Terms */
 .checkbox-group {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    /* Align to top for multi-line text */
     gap: 0.75rem;
     margin-top: 0.5rem;
 }
@@ -174,9 +175,13 @@
 .checkbox-group input[type="checkbox"] {
     width: 18px;
     height: 18px;
+    min-width: 18px;
+    /* Prevent shrinking */
     cursor: pointer;
     accent-color: var(--primary-pink);
     margin: 0;
+    margin-top: 3px;
+    /* Align with first line of text */
 }
 
 .checkbox-group label {
@@ -251,7 +256,7 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .form-row {
         grid-template-columns: 1fr;
     }

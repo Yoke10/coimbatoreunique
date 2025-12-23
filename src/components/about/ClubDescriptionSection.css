@@ -82,7 +82,7 @@
     mix-blend-mode: overlay;
 }
 
-@media (max-width: 968px) {
+@media (max-width: 1024px) {
     .club-description-section {
         flex-direction: column;
         gap: 3rem;

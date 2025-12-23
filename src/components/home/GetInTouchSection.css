@@ -389,3 +389,24 @@
 .get-in-touch-section .card:hover .icon-wrapper {
     filter: drop-shadow(0 -1.2em 2px rgba(0, 0, 0, 0.2)) brightness(1.64);
 }
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .get-in-touch-section .container-cards {
+        flex-wrap: wrap;
+        gap: 3rem;
+    }
+
+    .get-in-touch-section {
+        height: auto;
+        min-height: auto;
+        padding: 4rem 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .get-in-touch-section {
+        --sz: 14px;
+        /* Fixed scale for mobile readability */
+    }
+}

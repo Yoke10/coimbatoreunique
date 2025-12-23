@@ -34,9 +34,19 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+/* Responsive */
+@media (max-width: 1024px) {
     .team-section .team-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 2rem;
+        padding: 0 var(--spacing-sm);
+    }
+}
+
+@media (max-width: 425px) {
+    .team-section .team-grid {
+        grid-template-columns: 1fr;
+        /* Stack on mobile */
+        max-width: 320px;
     }
 }

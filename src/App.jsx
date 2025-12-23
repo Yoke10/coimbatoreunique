@@ -149,9 +149,9 @@ const SmokeyCursorWrapper = () => {
                     <SmokeyCursor
                         simulationResolution={128}
                         dyeResolution={1024}
-                        densityDissipation={2}
+                        densityDissipation={2.5}
                         curl={5}
-                        splatForce={4000}
+                        splatForce={3000}
                         splatRadius={0.1}
                         enableShading={true}
                     />

@@ -63,7 +63,7 @@ const Gallery = () => {
 
                     {galleryItems.length === 0 && (
                         <div style={{ color: 'var(--dark-gray)', textAlign: 'center', width: '100%', padding: '20px' }}>
-                            Loading or no images found...
+                            Loading images...
                         </div>
                     )}
                 </div>

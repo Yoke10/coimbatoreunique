@@ -216,12 +216,14 @@
     object-fit: cover;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
 
     .event-card-container,
     .event-card-container.reverse-layout {
         flex-direction: column;
         height: auto;
+        min-height: auto;
+        max-height: none;
     }
 
     .event-card-container .event-left-panel {

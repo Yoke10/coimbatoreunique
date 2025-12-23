@@ -149,14 +149,35 @@
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .hero-section .hero-title {
-        letter-spacing: -8px;
+        letter-spacing: 2px;
+        /* Adjusted from -8px to 2px for legibility */
+        line-height: 1.1;
+    }
+
+    .hero-section .hero-subtitle {
+        margin-bottom: 1rem;
     }
 
     .hero-section .hero-info {
         flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
     }
 
     .hero-section .hero-separator {
         display: none;
+    }
+}
+
+@media (max-width: 425px) {
+    .hero-section {
+        padding-top: 60px;
+        /* Slight adjust for smaller header */
+    }
+
+    .hero-section .hero-title {
+        font-size: clamp(2.5rem, 12vw, 3.5rem);
+        /* Ensure fit on small screens */
+        letter-spacing: 1px;
     }
 }

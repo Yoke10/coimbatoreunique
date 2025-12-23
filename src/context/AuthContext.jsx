@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
             if (user) {
                 try {
                     // 🔥 Fetch real Firestore user
-                    const profile = await firebaseService.getUser(user.uid);
+                    const profile = await firebaseService.getUser(user.uid, user);
                     if (profile) {
                         const isAdmin = await firebaseService.isAdmin(user.uid);
                         profile.role = isAdmin ? 'admin' : (profile.role || 'member');

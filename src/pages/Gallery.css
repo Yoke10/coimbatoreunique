@@ -97,8 +97,7 @@
     }
 }
 
-/* Mobile portrait */
-@media (max-width: 480px) {
+@media (max-width: 425px) {
     .gallery-page .carousel__container {
         column-count: 1;
         padding: 0 0.5rem;

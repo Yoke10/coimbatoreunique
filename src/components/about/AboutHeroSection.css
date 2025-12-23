@@ -89,7 +89,7 @@
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .about-hero-section {
         flex-direction: column-reverse;
         text-align: center;
