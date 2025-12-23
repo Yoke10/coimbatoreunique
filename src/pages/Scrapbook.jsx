@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import BulletinCard from '../components/bulletin/BulletinCard'
-import FlipbookViewer from '../components/bulletin/FlipbookViewer'
 import { firebaseService } from '../services/firebaseService'
 
 const Scrapbook = () => {
     const [scrapbooks, setScrapbooks] = useState([])
-    const [selectedScrapbook, setSelectedScrapbook] = useState(null)
 
     useEffect(() => {
         window.scrollTo(0, 0)
@@ -44,7 +42,6 @@ const Scrapbook = () => {
                         <BulletinCard
                             key={item.id}
                             bulletin={{ ...item, month: item.date }} // Map date to month for card compatibility
-                            onClick={(item) => setSelectedScrapbook(item)}
                         />
                     ))
                 ) : (
@@ -54,12 +51,7 @@ const Scrapbook = () => {
                 )}
             </div>
 
-            {selectedScrapbook && (
-                <FlipbookViewer
-                    pdfUrl={selectedScrapbook.pdfUrl}
-                    onClose={() => setSelectedScrapbook(null)}
-                />
-            )}
+            {/* Modal removed as per requirement */}
         </div>
     )
 }

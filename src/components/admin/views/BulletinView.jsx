@@ -4,7 +4,7 @@ import { firebaseService } from '../../../services/firebaseService';
 import { useToast } from '../../ui/Toast/ToastContext';
 import AdminModal from '../common/AdminModal';
 import { AdminInput, AdminFile } from '../common/FormComponents';
-import { fileToBase64, validateFile, formatDriveLink } from '../../../utils/fileHelpers';
+import { fileToBase64, validateFile, formatDriveLink, extractDriveId } from '../../../utils/fileHelpers';
 import '../layout/AdminLayout.css';
 
 const BulletinView = () => {
@@ -15,7 +15,12 @@ const BulletinView = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
-    const [formData, setFormData] = useState({ title: '', month: '', poster: '', pdfUrl: '' });
+    const [formData, setFormData] = useState({
+        title: '',
+        month: '',
+        poster: '',
+        driveFileId: ''
+    });
 
     const [filesToUpload, setFilesToUpload] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,13 +31,22 @@ const BulletinView = () => {
         setBulletins(await firebaseService.getBulletins());
     };
 
-    const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'driveFileId') {
+            // Auto-extract ID if a link is pasted
+            const extracted = extractDriveId(value);
+            setFormData(prev => ({ ...prev, [name]: extracted || value }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
 
     const handleFileChange = async (e, field, type) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Validation
+        // Validation - Image Only now
         const validation = validateFile(file, type);
         if (!validation.valid) {
             toast({ title: "Invalid File", description: validation.error || "Check file type", variant: "destructive" });
@@ -50,17 +64,15 @@ const BulletinView = () => {
                 setFormData(prev => ({ ...prev, [field]: base64 }));
             } catch { }
         }
-
-        // PDF: Chunk Upload (Database)
-        // Store raw file for later chunking in handleSubmit
-        if (type === 'pdf') {
-            setFilesToUpload(prev => ({ ...prev, [field]: file }));
-            setFormData(prev => ({ ...prev, [field]: file.name })); // Visual Feedback
-        }
     };
 
     const openAdd = () => {
-        setFormData({ title: '', month: '', poster: '', pdfUrl: '' });
+        setFormData({
+            title: '',
+            month: '',
+            poster: '',
+            driveFileId: ''
+        });
         setFilesToUpload({});
         setIsEditing(false);
         setIsFormModalOpen(true);
@@ -87,12 +99,6 @@ const BulletinView = () => {
             } else {
                 const docRef = await firebaseService.addBulletin(updatedData);
                 docId = docRef.id;
-            }
-
-            // 2. Upload Chunks (If PDF selected)
-            if (filesToUpload.pdfUrl) {
-                toast({ title: "Uploading PDF...", description: "Optimizing and saving to database..." });
-                await firebaseService.uploadPdfChunks(docId, filesToUpload.pdfUrl);
             }
 
             toast({ title: "Success", description: "Bulletin saved successfully", variant: "success" });
@@ -140,14 +146,9 @@ const BulletinView = () => {
                 <form onSubmit={handleSubmit}>
                     <AdminInput label="Title" name="title" value={formData.title} onChange={handleInputChange} required />
                     <AdminInput label="Month/Edition" name="month" value={formData.month} onChange={handleInputChange} required />
-                    <AdminFile label="Cover Image" accept="image/webp" onChange={(e) => handleFileChange(e, 'poster', 'image')} />
-                    {/* CHANGED: File Input for PDF (Chunk Strategy) */}
-                    <AdminFile label="Bulletin PDF (Upload)" accept="application/pdf" onChange={(e) => handleFileChange(e, 'pdfUrl', 'pdf')} />
+                    <AdminInput label="Google Drive Link (or ID)" name="driveFileId" value={formData.driveFileId} onChange={handleInputChange} placeholder="Paste full Drive Link here..." required />
 
-                    {/* Visual Feedback for selected file */}
-                    {formData.pdfUrl && !formData.pdfUrl.startsWith('http') && (
-                        <p style={{ fontSize: '0.8rem', marginTop: '-10px', color: '#666' }}>Selected: {formData.pdfUrl}</p>
-                    )}
+                    <AdminFile label="Cover Image" accept="image/webp" onChange={(e) => handleFileChange(e, 'poster', 'image')} />
                     <button type="submit" className="admin-btn-primary" style={{ marginTop: '1.5rem' }} disabled={isSubmitting}>
                         {isSubmitting ? "Uploading..." : (isEditing ? "Update" : "Create")}
                     </button>
@@ -160,7 +161,8 @@ const BulletinView = () => {
                         <img src={selectedItem.poster} alt="Cover" style={{ width: '150px', borderRadius: '8px', marginBottom: '1rem' }} />
                         <h3>{selectedItem.title}</h3>
                         <p><strong>Month:</strong> {selectedItem.month}</p>
-                        <a href={selectedItem.pdfUrl} target="_blank" rel="noreferrer" className="admin-btn-primary" style={{ display: 'inline-block', width: 'auto', textDecoration: 'none' }}>View PDF</a>
+                        <p><strong>Drive ID:</strong> {selectedItem.driveFileId}</p>
+                        <a href={`https://drive.google.com/file/d/${selectedItem.driveFileId}/view`} target="_blank" rel="noreferrer" className="admin-btn-primary" style={{ display: 'inline-block', width: 'auto', textDecoration: 'none' }}>Open in Drive</a>
                     </div>
                 )}
             </AdminModal>

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import BulletinCard from '../components/bulletin/BulletinCard'
-import FlipbookViewer from '../components/bulletin/FlipbookViewer'
 import { firebaseService } from '../services/firebaseService'
 
 const Bulletin = () => {
     const [bulletins, setBulletins] = useState([])
-    const [selectedBulletin, setSelectedBulletin] = useState(null)
 
     useEffect(() => {
         window.scrollTo(0, 0)
@@ -48,7 +46,6 @@ const Bulletin = () => {
                         <BulletinCard
                             key={bulletin.id}
                             bulletin={bulletin}
-                            onClick={setSelectedBulletin}
                         />
                     ))
                 ) : (
@@ -58,13 +55,7 @@ const Bulletin = () => {
                 )}
             </div>
 
-            {selectedBulletin && (
-                <FlipbookViewer
-                    pdfUrl={selectedBulletin.pdfUrl}
-                    bulletinId={selectedBulletin.id} // Enable Firestore Chunk Fetching
-                    onClose={() => setSelectedBulletin(null)}
-                />
-            )}
+            {/* <FlipbookViewer /> Component Removed as per simplified requirement */}
         </div>
     )
 }

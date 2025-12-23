@@ -74,6 +74,12 @@ const MemberProfile = ({ user, onUpdate }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [authStatus, setAuthStatus] = useState('Checking...')
 
+    // Password Change State
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+    const [pwData, setPwData] = useState({ newPassword: '', confirmPassword: '' })
+    const [pwLoading, setPwLoading] = useState(false)
+    const [pwError, setPwError] = useState('')
+
     // Auth Listener
     React.useEffect(() => {
         import('../../firebase/config').then(({ auth }) => {
@@ -97,7 +103,7 @@ const MemberProfile = ({ user, onUpdate }) => {
 
     const [formData, setFormData] = useState(getInitialData(user))
 
-    // SYNC FORM DATA WHEN USER PROP UPDATES (e.g. after async fetch)
+    // SYNC FORM DATA WHEN USER PROP UPDATES
     useEffect(() => {
         setFormData(getInitialData(user))
     }, [user])
@@ -112,37 +118,49 @@ const MemberProfile = ({ user, onUpdate }) => {
     const handleSave = async () => {
         setLoading(true)
         try {
-            // Update Firestore DIRECTLY using firebaseService
-            // We only update the 'profile' field in the user document
             const updatedUser = await firebaseService.updateUser(user.id, {
-                profile: {
-                    ...formData,
-                    // If name is edited, we might want to update top-level username too? 
-                    // Usually safer to keep top-level sync with profile.fullName
-                }
+                profile: { ...formData }
             })
-
-            // Update parent state
-            onUpdate({ ...user, profile: formData }) // Optimistic or use returned
-
+            onUpdate({ ...user, profile: formData })
             toast({ title: "Profile Updated", description: "Your details have been saved successfully.", variant: "success" })
             setIsEditing(false)
         } catch (err) {
             console.error(err)
-            if (err.message.includes("Session not found") || err.message.includes("Permission Denied")) {
-                toast({
-                    title: "Session Expired",
-                    description: "Your secure session has expired. Please Log Out and Log In again to save changes.",
-                    variant: "destructive",
-                    duration: 5000
-                })
-            } else {
-                toast({ title: "Update Failed", description: "Failed to update profile.", variant: "destructive" })
-            }
+            toast({ title: "Update Failed", description: "Failed to update profile.", variant: "destructive" })
         } finally {
             setLoading(false)
         }
     }
+
+    // Password Handlers
+    const handlePwChange = (e) => setPwData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+    const submitPassword = async (e) => {
+        e.preventDefault();
+        setPwError('');
+        if (pwData.newPassword.length < 6) {
+            setPwError('Password must be at least 6 characters');
+            return;
+        }
+        if (pwData.newPassword !== pwData.confirmPassword) {
+            setPwError('Passwords do not match');
+            return;
+        }
+
+        setPwLoading(true);
+        try {
+            await firebaseService.changePassword(user.id, pwData.newPassword);
+            toast({ title: "Success", description: "Password changed successfully.", variant: "success" });
+            setIsPasswordModalOpen(false);
+            setPwData({ newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            console.error("Password Change Error:", error);
+            setPwError(error.message);
+            toast({ title: "Error", description: error.message, variant: "destructive" });
+        } finally {
+            setPwLoading(false);
+        }
+    };
 
     const initials = formData.fullName
         ? formData.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
@@ -193,6 +211,31 @@ const MemberProfile = ({ user, onUpdate }) => {
                             <div style={{ fontSize: '0.75rem', color: '#a0aec0', marginBottom: '0.2rem' }}>LOGIN ID</div>
                             <div style={{ fontSize: '0.9rem', color: '#4a5568', wordBreak: 'break-all' }}>{user.email} <Lock size={12} style={{ display: 'inline', marginLeft: '4px' }} /></div>
                         </div>
+                    </div>
+
+                    {/* Security Section (New) */}
+                    <div style={{ marginTop: '2rem', textAlign: 'left' }}>
+                        <h4 style={{ ...sectionHeaderStyle, marginBottom: '1rem' }}>Security Settings</h4>
+                        <button
+                            onClick={() => setIsPasswordModalOpen(true)}
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem',
+                                background: 'white',
+                                color: 'var(--primary-purple)',
+                                border: '2px solid var(--primary-purple)',
+                                borderRadius: '10px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            }}
+                        >
+                            <Lock size={16} /> Change Password
+                        </button>
+                        <p style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.5rem', textAlign: 'center' }}>
+                            Limit: 2 changes per 15 days
+                        </p>
                     </div>
                 </div>
 
@@ -263,6 +306,53 @@ const MemberProfile = ({ user, onUpdate }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Password Modal */}
+            {isPasswordModalOpen && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div style={{ background: 'white', padding: '2rem', borderRadius: '15px', width: '90%', maxWidth: '400px' }}>
+                        <h3 style={{ marginTop: 0, color: 'var(--primary-magenta)' }}>Change Password</h3>
+                        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                            Enter your new password below.
+                        </p>
+
+                        {pwError && (
+                            <div style={{ padding: '0.8rem', background: '#fff5f5', color: '#c53030', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                                {pwError}
+                            </div>
+                        )}
+
+                        <form onSubmit={submitPassword}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500' }}>New Password</label>
+                                <input
+                                    type="password" name="newPassword"
+                                    value={pwData.newPassword} onChange={handlePwChange}
+                                    style={inputStyle} required
+                                />
+                            </div>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500' }}>Confirm Password</label>
+                                <input
+                                    type="password" name="confirmPassword"
+                                    value={pwData.confirmPassword} onChange={handlePwChange}
+                                    style={inputStyle} required
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button type="button" onClick={() => setIsPasswordModalOpen(false)} style={cancelBtnStyle}>Cancel</button>
+                                <button type="submit" style={saveBtnStyle} disabled={pwLoading}>
+                                    {pwLoading ? 'Updating...' : 'Update Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

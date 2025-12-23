@@ -5,7 +5,7 @@ import {
     query, where, orderBy, setDoc, runTransaction, writeBatch, serverTimestamp
 } from 'firebase/firestore';
 import {
-    signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence,
+    signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence,
     createUserWithEmailAndPassword, getAuth as getSecondaryAuth, signOut as signOutSecondary,
     updatePassword
 } from 'firebase/auth';
@@ -55,7 +55,7 @@ export const firebaseService = {
         }
 
         try {
-            await setPersistence(auth, browserLocalPersistence);
+            await setPersistence(auth, browserSessionPersistence);
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             return userCredential.user;
         } catch (error) {
@@ -514,14 +514,37 @@ export const firebaseService = {
     },
 
     changePassword: async (uid, newPassword) => {
-        // Note: This only works if the user is currently signed in and re-authenticated recently.
-        // We assume the user passed to FirstTimeSetup is the currently signed-in user.
         const user = auth.currentUser;
-        if (user && user.uid === uid) {
-            await updatePassword(user, newPassword);
-        } else {
+
+        if (!user || user.uid !== uid) {
             throw new Error("User must be logged in to change password");
         }
+
+        // 1. Check Rate Limit
+        const userRef = doc(db, COLLECTIONS.USERS, uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) throw new Error("User record not found");
+
+        const history = userSnap.data().passwordChangeHistory || [];
+        const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
+
+        const recentChanges = history.filter(ts => ts > fifteenDaysAgo);
+
+        if (recentChanges.length >= 2) {
+            throw new Error("Security Limit: You can only change your password 2 times every 15 days.");
+        }
+
+        // 2. Change Password in Auth
+        await updatePassword(user, newPassword);
+
+        // 3. Update History in Firestore
+        const newHistory = [...recentChanges, Date.now()];
+        await updateDoc(userRef, {
+            passwordChangeHistory: newHistory
+        });
+
+        return true;
     },
 
     // --- SCHEDULED EMAILS (OUTBOX) ---

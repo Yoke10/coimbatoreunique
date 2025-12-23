@@ -4,7 +4,7 @@ import { firebaseService } from '../../../services/firebaseService';
 import { useToast } from '../../ui/Toast/ToastContext';
 import AdminModal from '../common/AdminModal';
 import { AdminInput, AdminFile } from '../common/FormComponents';
-import { fileToBase64, validateFile } from '../../../utils/fileHelpers';
+import { fileToBase64, validateFile, formatDriveLink, extractDriveId } from '../../../utils/fileHelpers';
 import '../layout/AdminLayout.css';
 
 
@@ -16,14 +16,22 @@ const ScrapbookView = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
-    const [formData, setFormData] = useState({ title: '', date: '', poster: '', pdfUrl: '' });
+    const [formData, setFormData] = useState({ title: '', date: '', poster: '', driveFileId: '' });
     const [filesToUpload, setFilesToUpload] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => { load(); }, []);
     const load = async () => setItems(await firebaseService.getScrapbooks());
 
-    const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'driveFileId') {
+            const extracted = extractDriveId(value);
+            setFormData(prev => ({ ...prev, [name]: extracted || value }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
 
     const handleFileChange = async (e, field, type) => {
         const file = e.target.files[0];
@@ -50,7 +58,7 @@ const ScrapbookView = () => {
     };
 
     const openAdd = () => {
-        setFormData({ title: '', date: '', poster: '', pdfUrl: '' });
+        setFormData({ title: '', date: '', poster: '', driveFileId: '' });
         setFilesToUpload({});
         setIsEditing(false);
         setIsFormModalOpen(true);
@@ -136,8 +144,7 @@ const ScrapbookView = () => {
                     <AdminInput label="Title" name="title" value={formData.title} onChange={handleInputChange} required />
                     <AdminInput label="Year/Date" name="date" value={formData.date} onChange={handleInputChange} required />
                     <AdminFile label="Cover Image" accept="image/webp" onChange={(e) => handleFileChange(e, 'poster', 'image')} />
-                    <AdminFile label="PDF File" accept="application/pdf" onChange={(e) => handleFileChange(e, 'pdfUrl', 'pdf')} />
-                    <AdminInput name="pdfUrl" value={formData.pdfUrl} onChange={handleInputChange} placeholder="Or PDF URL" />
+                    <AdminInput label="Google Drive Link (or ID)" name="driveFileId" value={formData.driveFileId} onChange={handleInputChange} placeholder="Paste full Drive Link here..." required />
                     <button type="submit" className="admin-btn-primary" style={{ marginTop: '1.5rem' }} disabled={isSubmitting}>
                         {isSubmitting ? "Uploading..." : (isEditing ? "Update" : "Create")}
                     </button>
@@ -150,7 +157,8 @@ const ScrapbookView = () => {
                         <img src={selectedItem.poster} alt="Cover" style={{ width: '150px', borderRadius: '8px', marginBottom: '1rem' }} />
                         <h3>{selectedItem.title}</h3>
                         <p><strong>Date:</strong> {selectedItem.date}</p>
-                        <a href={selectedItem.pdfUrl} target="_blank" rel="noreferrer" className="admin-btn-primary" style={{ display: 'inline-block', width: 'auto', textDecoration: 'none' }}>View PDF</a>
+                        <p><strong>Drive ID:</strong> {selectedItem.driveFileId}</p>
+                        <a href={`https://drive.google.com/file/d/${selectedItem.driveFileId}/view`} target="_blank" rel="noreferrer" className="admin-btn-primary" style={{ display: 'inline-block', width: 'auto', textDecoration: 'none' }}>Open in Drive</a>
                     </div>
                 )}
             </AdminModal>
