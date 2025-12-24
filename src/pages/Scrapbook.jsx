@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import BulletinCard from '../components/bulletin/BulletinCard'
+import Loading from '../components/common/Loading'
 import { firebaseService } from '../services/firebaseService'
 
 const Scrapbook = () => {
     const [scrapbooks, setScrapbooks] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         window.scrollTo(0, 0)
         const loadScrapbooks = async () => {
-            const data = await firebaseService.getScrapbooks()
-            setScrapbooks(data)
+            try {
+                const data = await firebaseService.getScrapbooks()
+                setScrapbooks(data)
+            } finally {
+                setLoading(false)
+            }
         }
         loadScrapbooks()
     }, [])
@@ -37,7 +43,9 @@ const Scrapbook = () => {
                 maxWidth: '1200px',
                 margin: '0 auto'
             }}>
-                {scrapbooks.length > 0 ? (
+                {loading ? (
+                    <Loading fullScreen={false} style={{ gridColumn: '1/-1' }} />
+                ) : scrapbooks.length > 0 ? (
                     scrapbooks.map(item => (
                         <BulletinCard
                             key={item.id}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import BulletinCard from '../components/bulletin/BulletinCard'
+import Loading from '../components/common/Loading'
 import { firebaseService } from '../services/firebaseService'
 
 const Bulletin = () => {
     const [bulletins, setBulletins] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         window.scrollTo(0, 0)
@@ -13,6 +15,8 @@ const Bulletin = () => {
                 setBulletins(data)
             } catch (error) {
                 console.error("Failed to load bulletins", error)
+            } finally {
+                setLoading(false)
             }
         }
         loadBulletins()
@@ -41,7 +45,9 @@ const Bulletin = () => {
                 maxWidth: '1200px',
                 margin: '0 auto'
             }}>
-                {bulletins.length > 0 ? (
+                {loading ? (
+                    <Loading fullScreen={false} style={{ gridColumn: '1/-1' }} />
+                ) : bulletins.length > 0 ? (
                     bulletins.map(bulletin => (
                         <BulletinCard
                             key={bulletin.id}

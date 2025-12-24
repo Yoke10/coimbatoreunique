@@ -4,6 +4,7 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 
 import { ToastProvider, Toaster } from './components/ui/Toast/ToastContext'
+import Loading from './components/common/Loading'
 import ScrollToTop from './components/common/ScrollToTop'
 
 // Lazy Load Pages
@@ -101,24 +102,13 @@ const App = () => {
     )
 }
 
+
 const MainLayout = () => {
     return (
         <>
             <HeaderWrapper />
             <main>
-                <Suspense fallback={
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100vh',
-                        color: 'var(--primary-purple)',
-                        fontSize: '1.2rem',
-                        fontWeight: '600'
-                    }}>
-                        Loading...
-                    </div>
-                }>
+                <Suspense fallback={<Loading />}>
                     <Outlet />
                 </Suspense>
             </main>

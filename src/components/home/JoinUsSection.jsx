@@ -1,52 +1,85 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './JoinUsSection.css'
-const groupPic = '/images/grouppic.webp'
 
 const JoinUsSection = () => {
     const navigate = useNavigate();
+    const cardRef = useRef(null);
+    const [rotation, setRotation] = useState({ x: 0, y: 0 });
+    const [isHovering, setIsHovering] = useState(false);
+
+    const handleMouseMove = (e) => {
+        if (!cardRef.current) return;
+
+        const card = cardRef.current;
+        const rect = card.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        const rotateX = ((mouseY - centerY) / (rect.height / 2)) * -10; // Max 10deg
+        const rotateY = ((mouseX - centerX) / (rect.width / 2)) * 10;   // Max 10deg
+
+        setRotation({ x: rotateX, y: rotateY });
+    };
+
+    const handleMouseEnter = () => {
+        setIsHovering(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsHovering(false);
+        setRotation({ x: 0, y: 0 });
+    };
 
     return (
         <section className="join-us-section">
             <div className="join-us-container">
                 <div className="join-us-grid">
-                    {/* Left Side - Image */}
-                    <div className="join-us-image-wrapper">
-                        <img
-                            src={groupPic}
-                            alt="Join Rotaract Team"
-                            className="join-us-image"
-                            loading="lazy"
-                        />
+                    {/* Left Side - Content */}
+                    <div className="join-us-left">
+                        <span className="join-us-subtitle">BE PART OF SOMETHING GREATER</span>
+                        <h2 className="join-us-title">WHY JOIN US?</h2>
+                        <p className="join-us-text">
+                            Join Rotaract Club of Coimbatore Cosmopolitan and become
+                            part of a dynamic community dedicated to service, leadership,
+                            and positive change. Engage in impactful projects, develop
+                            lifelong friendships, and grow as a leader while making a
+                            difference in society. Together, let's inspire action and create a
+                            better tomorrow.
+                        </p>
                     </div>
 
-                    {/* Right Side - Content */}
-                    <div className="join-us-content">
-                        <h2 className="join-us-title">Ready to Make an Impact?</h2>
-                        <p className="join-us-text">
-                            Join Rotaract Club today and become part of a global movement of young leaders
-                            dedicated to service, leadership, and fellowship. Together, we can create lasting change
-                            in our community and around the world.
-                        </p>
-                        <div className="join-us-cta">
-                            <div className="bevel-wrapper">
-                                <input
-                                    type="checkbox"
-                                    id="bevel-button"
-                                    className="bevel-input"
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            // Wait for animation then navigate
-                                            setTimeout(() => {
-                                                navigate('/join');
-                                            }, 600);
-                                        }
-                                    }}
-                                />
-                                <label className="bevel-label" htmlFor="bevel-button">
-                                    Become a Member
-                                </label>
-                                <span className="bevel-span">Unique</span>
+                    {/* Right Side - Card */}
+                    <div className="join-us-right">
+                        <div
+                            className="join-us-card interactive-card-wrapper"
+                            onMouseMove={handleMouseMove}
+                            onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}
+                            ref={cardRef}
+                            style={{
+                                transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale3d(1, 1, 1)`,
+                                transition: isHovering ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out'
+                            }}
+                        >
+                            <div className="interactive-card-inner">
+                                <h3 className="card-title">Ready to Make a Difference?</h3>
+                                <p className="card-text">
+                                    Take the first step towards personal growth,
+                                    community service, and lifelong
+                                    connections.
+                                </p>
+                                <button
+                                    className="join-btn"
+                                    onClick={() => navigate('/join')}
+                                >
+                                    GET IN TOUCH
+                                </button>
+                                <div className="card-shine" style={{
+                                    background: `radial-gradient(circle at ${50 + rotation.y * 3}% ${50 + rotation.x * 3}%, rgba(255,255,255,0.3), transparent)`
+                                }} />
                             </div>
                         </div>
                     </div>

@@ -1,0 +1,354 @@
+/* Existing styles... */
+
+/* Inline Mode Overrides */
+.loading-container.inline {
+    width: 100%;
+    height: 300px;
+    /* Default height for inline */
+    position: relative;
+    background-color: transparent;
+    z-index: 10;
+    /* Lower z-index than modal/fixed */
+}
+
+/* Adjust scale for inline if needed, or keep same size */
+.loading-container.inline .body {
+    transform: scale(0.8);
+    /* Slightly smaller for inline contexts */
+}
+
+.loading-container.inline .loading-text {
+    font-size: 12px;
+}
+
+/* ...rest of the file as before, just appending or keeping existing... */
+/* Since write_to_file overwrites, I need to provide the FULL content with the new additions. */
+
+.loading-container {
+    width: 100vw;
+    height: 100vh;
+    background-color: #ffffff;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-container.inline {
+    width: 100%;
+    height: 300px;
+    position: relative;
+    background-color: transparent;
+    z-index: 10;
+    overflow: hidden;
+    /* Contain the animation */
+    display: flex;
+    /* Ensure centering works as flex container too */
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-container.inline .body {
+    transform: scale(0.8);
+}
+
+.loading-container .loading-text {
+    position: absolute;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    left: 50%;
+    top: 58%;
+    transform: translateX(-50%);
+    margin: 0;
+    color: var(--primary-purple);
+    opacity: 0.8;
+}
+
+.loading-container .body {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: -50px;
+    /* Centering offset adjustment */
+    margin-top: -20px;
+    animation: speeder .4s linear infinite;
+}
+
+.loading-container .body>span {
+    height: 5px;
+    width: 35px;
+    background: var(--primary-purple);
+    /* speeder body color */
+    position: absolute;
+    top: -19px;
+    left: 60px;
+    border-radius: 2px 10px 1px 0;
+}
+
+.loading-container .base span {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-right: 100px solid var(--primary-purple);
+    /* speeder base color */
+    border-bottom: 6px solid transparent;
+}
+
+.loading-container .base span:before {
+    content: "";
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: var(--primary-purple);
+    /* speeder base circle color */
+    position: absolute;
+    right: -110px;
+    top: -16px;
+}
+
+.loading-container .base span:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-top: 0 solid transparent;
+    border-right: 55px solid var(--primary-purple);
+    /* speeder tail color */
+    border-bottom: 16px solid transparent;
+    top: -16px;
+    right: -98px;
+}
+
+.loading-container .face {
+    position: absolute;
+    height: 12px;
+    width: 20px;
+    background: var(--primary-purple);
+    /* speeder face color */
+    border-radius: 20px 20px 0 0;
+    transform: rotate(-40deg);
+    right: -125px;
+    top: -15px;
+}
+
+.loading-container .face:after {
+    content: "";
+    height: 12px;
+    width: 12px;
+    background: var(--primary-purple);
+    right: 4px;
+    top: 7px;
+    position: absolute;
+    transform: rotate(40deg);
+    transform-origin: 50% 50%;
+    border-radius: 0 0 0 2px;
+}
+
+.loading-container .body>span>span:nth-child(1),
+.loading-container .body>span>span:nth-child(2),
+.loading-container .body>span>span:nth-child(3),
+.loading-container .body>span>span:nth-child(4) {
+    width: 30px;
+    height: 1px;
+    background: var(--primary-pink);
+    /* wind lines color */
+    position: absolute;
+    animation: fazer1 .2s linear infinite;
+}
+
+.loading-container .body>span>span:nth-child(2) {
+    top: 3px;
+    animation: fazer2 .4s linear infinite;
+}
+
+.loading-container .body>span>span:nth-child(3) {
+    top: 1px;
+    animation: fazer3 .4s linear infinite;
+    animation-delay: -1s;
+}
+
+.loading-container .body>span>span:nth-child(4) {
+    top: 4px;
+    animation: fazer4 1s linear infinite;
+    animation-delay: -1s;
+}
+
+@keyframes fazer1 {
+    0% {
+        left: 0;
+    }
+
+    100% {
+        left: -80px;
+        opacity: 0;
+    }
+}
+
+@keyframes fazer2 {
+    0% {
+        left: 0;
+    }
+
+    100% {
+        left: -100px;
+        opacity: 0;
+    }
+}
+
+@keyframes fazer3 {
+    0% {
+        left: 0;
+    }
+
+    100% {
+        left: -50px;
+        opacity: 0;
+    }
+}
+
+@keyframes fazer4 {
+    0% {
+        left: 0;
+    }
+
+    100% {
+        left: -150px;
+        opacity: 0;
+    }
+}
+
+@keyframes speeder {
+    0% {
+        transform: translate(2px, 1px) rotate(0deg);
+    }
+
+    10% {
+        transform: translate(-1px, -3px) rotate(-1deg);
+    }
+
+    20% {
+        transform: translate(-2px, 0px) rotate(1deg);
+    }
+
+    30% {
+        transform: translate(1px, 2px) rotate(0deg);
+    }
+
+    40% {
+        transform: translate(1px, -1px) rotate(1deg);
+    }
+
+    50% {
+        transform: translate(-1px, 3px) rotate(-1deg);
+    }
+
+    60% {
+        transform: translate(-1px, 1px) rotate(0deg);
+    }
+
+    70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+    }
+
+    80% {
+        transform: translate(-2px, -1px) rotate(1deg);
+    }
+
+    90% {
+        transform: translate(2px, 1px) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+    }
+}
+
+.loading-container .longfazers {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.loading-container .longfazers span {
+    position: absolute;
+    height: 2px;
+    width: 20%;
+    background: var(--primary-pink);
+    /* long speed lines color */
+    opacity: 0.8;
+}
+
+.loading-container .longfazers span:nth-child(1) {
+    top: 20%;
+    animation: lf .6s linear infinite;
+    animation-delay: -5s;
+}
+
+.loading-container .longfazers span:nth-child(2) {
+    top: 40%;
+    animation: lf2 .8s linear infinite;
+    animation-delay: -1s;
+}
+
+.loading-container .longfazers span:nth-child(3) {
+    top: 60%;
+    animation: lf3 .6s linear infinite;
+}
+
+.loading-container .longfazers span:nth-child(4) {
+    top: 80%;
+    animation: lf4 .5s linear infinite;
+    animation-delay: -3s;
+}
+
+@keyframes lf {
+    0% {
+        left: 200%;
+    }
+
+    100% {
+        left: -200%;
+        opacity: 0;
+    }
+}
+
+@keyframes lf2 {
+    0% {
+        left: 200%;
+    }
+
+    100% {
+        left: -200%;
+        opacity: 0;
+    }
+}
+
+@keyframes lf3 {
+    0% {
+        left: 200%;
+    }
+
+    100% {
+        left: -100%;
+        opacity: 0;
+    }
+}
+
+@keyframes lf4 {
+    0% {
+        left: 200%;
+    }
+
+    100% {
+        left: -100%;
+        opacity: 0;
+    }
+}

@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { firebaseService } from '../services/firebaseService'
+import Loading from '../components/common/Loading'
 import './Gallery.css'
 
 const Gallery = () => {
     const [galleryItems, setGalleryItems] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const loadGallery = async () => {
-            const data = await firebaseService.getGallery()
-            setGalleryItems(data)
+            try {
+                const data = await firebaseService.getGallery()
+                setGalleryItems(data)
+            } finally {
+                setLoading(false)
+            }
         }
         loadGallery()
     }, [])
@@ -46,27 +52,31 @@ const Gallery = () => {
             </div>
 
             <section className="gallery-carousel">
-                <div className="carousel__container">
-                    {galleryItems.map((item) => (
-                        <div key={item.id} className="carousel-item">
-                            <img
-                                className="carousel-item__img"
-                                src={item.image}
-                                alt={item.eventName}
-                                onLoad={handleImageLoad}
-                            />
-                            <div className="carousel-item__details">
-                                <h5 className="carousel-item__details--title">{item.eventName}</h5>
+                {loading ? (
+                    <Loading fullScreen={false} />
+                ) : (
+                    <div className="carousel__container">
+                        {galleryItems.map((item) => (
+                            <div key={item.id} className="carousel-item">
+                                <img
+                                    className="carousel-item__img"
+                                    src={item.image}
+                                    alt={item.eventName}
+                                    onLoad={handleImageLoad}
+                                />
+                                <div className="carousel-item__details">
+                                    <h5 className="carousel-item__details--title">{item.eventName}</h5>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
 
-                    {galleryItems.length === 0 && (
-                        <div style={{ color: 'var(--dark-gray)', textAlign: 'center', width: '100%', padding: '20px' }}>
-                            Loading images...
-                        </div>
-                    )}
-                </div>
+                        {galleryItems.length === 0 && (
+                            <div style={{ color: 'var(--dark-gray)', textAlign: 'center', width: '100%', padding: '20px' }}>
+                                No images in gallery yet.
+                            </div>
+                        )}
+                    </div>
+                )}
             </section>
         </div>
     )

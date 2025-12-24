@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import EventCard from '../components/events/EventCard'
+import Loading from '../components/common/Loading'
 import { firebaseService } from '../services/firebaseService'
 
 const Events = () => {
     const [events, setEvents] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         window.scrollTo(0, 0)
         const loadEvents = async () => {
-            const data = await firebaseService.getEvents()
-            setEvents(data)
+            try {
+                const data = await firebaseService.getEvents()
+                setEvents(data)
+            } finally {
+                setLoading(false)
+            }
         }
         loadEvents()
     }, [])
@@ -31,7 +37,9 @@ const Events = () => {
             </h1>
 
             <div className="events-list-container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-                {events.length > 0 ? (
+                {loading ? (
+                    <Loading fullScreen={false} />
+                ) : events.length > 0 ? (
                     events.map((event, index) => (
                         <EventCard key={event.id} event={event} index={index} />
                     ))
