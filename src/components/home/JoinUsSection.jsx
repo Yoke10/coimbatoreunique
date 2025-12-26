@@ -75,7 +75,7 @@ const JoinUsSection = () => {
                                     className="join-btn"
                                     onClick={() => navigate('/join')}
                                 >
-                                    GET IN TOUCH
+                                    BECOME A MEMBER
                                 </button>
                                 <div className="card-shine" style={{
                                     background: `radial-gradient(circle at ${50 + rotation.y * 3}% ${50 + rotation.x * 3}%, rgba(255,255,255,0.3), transparent)`

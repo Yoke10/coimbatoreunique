@@ -158,23 +158,93 @@
 }
 
 /* Responsive */
+/* Responsive Design */
+
+/* Tablet & Smaller Desktop (Max 1024px) */
+@media (max-width: 1024px) {
+    .join-us-section .join-us-container {
+        padding: 0 var(--spacing-lg);
+    }
+
+    .join-us-section .join-us-title {
+        font-size: 3rem;
+    }
+}
+
+/* Tablet Portrait (Max 900px) - Switch to Stacked Layout */
 @media (max-width: 900px) {
     .join-us-section .join-us-grid {
         grid-template-columns: 1fr;
-        gap: var(--spacing-lg);
+        gap: var(--spacing-xl);
+        text-align: center;
     }
 
     .join-us-section .join-us-left {
-        text-align: center;
         align-items: center;
         padding-top: 0;
     }
 
     .join-us-section .join-us-text {
+        max-width: 80%;
+        margin: 0 auto;
+    }
+
+    .join-us-section .join-us-card {
+        margin: var(--spacing-lg) auto 0;
+        max-width: 500px;
+    }
+}
+
+/* Mobile (Max 600px) */
+@media (max-width: 600px) {
+    .join-us-section {
+        padding: var(--spacing-lg) 0;
+    }
+
+    .join-us-section .join-us-container {
+        padding: 0 var(--spacing-md);
+    }
+
+    .join-us-section .join-us-title {
+        font-size: 2.2rem;
+        /* Smaller title for mobile */
+    }
+
+    .join-us-section .join-us-subtitle {
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+    }
+
+    .join-us-section .join-us-text {
+        font-size: 1rem;
         max-width: 100%;
     }
 
     .join-us-section .join-us-card {
-        margin: 0 auto;
+        padding: var(--spacing-lg);
+        width: 100%;
+        /* Disable 3D tilt effect on mobile effectively by simplifying visual if needed, 
+           but CSS transforms usually handle okay. We just ensure sizing is good */
+    }
+
+    .join-us-section .card-title {
+        font-size: 1.5rem;
+    }
+
+    .join-us-section .join-btn {
+        width: 100%;
+        /* Full width button on mobile */
+        padding: 12px 20px;
+    }
+}
+
+/* Small Mobile (Max 380px) */
+@media (max-width: 380px) {
+    .join-us-section .join-us-title {
+        font-size: 1.8rem;
+    }
+
+    .join-us-section .join-us-card {
+        padding: var(--spacing-md);
     }
 }

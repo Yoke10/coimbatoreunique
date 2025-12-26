@@ -81,6 +81,18 @@
     gap: 1rem;
     align-items: flex-start;
     transition: transform 0.2s;
+    height: 100%;
+    /* Ensure uniform height if grid items vary */
+    min-height: 200px;
+}
+
+.member-container .dir-info {
+    flex: 1;
+    /* Allow info to take remaining space */
+    min-width: 0;
+    /* Critical for text overflow handling in flex children */
+    display: flex;
+    flex-direction: column;
 }
 
 .member-container .directory-card:hover {
@@ -118,6 +130,10 @@
     margin: 0.2rem 0;
     font-size: 0.85rem;
     color: #555;
+    word-break: break-word;
+    /* Ensure long emails break */
+    overflow-wrap: break-word;
+    line-height: 1.4;
 }
 
 /* Reports Section */

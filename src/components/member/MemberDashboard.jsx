@@ -202,7 +202,7 @@ const MemberDashboard = ({ user, onLogout }) => {
                                             <div className="dir-info">
                                                 <h3>{member.profile?.fullName || member.username}</h3>
                                                 <div className="dir-details">
-                                                    <p><strong>Email:</strong> {member.profile?.email || '-'}</p>
+                                                    <p><strong>Email:</strong> {member.profile?.personalEmail || '-'}</p>
                                                     <p><strong>Contact:</strong> {member.profile?.contact || '-'}</p>
                                                 </div>
                                                 <button
@@ -295,7 +295,7 @@ const MemberDashboard = ({ user, onLogout }) => {
                             </div>
                             <div className="detail-row">
                                 <span className="detail-label">Email</span>
-                                <span className="detail-value">{selectedMember.profile?.email || '-'}</span>
+                                <span className="detail-value">{selectedMember.profile?.personalEmail || '-'}</span>
                             </div>
                             <div className="detail-row">
                                 <span className="detail-label">Contact</span>

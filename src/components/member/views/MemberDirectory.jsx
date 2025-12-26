@@ -41,6 +41,9 @@ const MemberDirectory = () => {
                         <h3>{member.profile?.fullName || member.username}</h3>
                         <div className="dir-details">
                             <p>{member.profile?.designation || 'Member'}</p>
+                            <p><a href={`mailto:${member.profile?.personalEmail}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                📧 {member.profile?.personalEmail || 'No email'}
+                            </a></p>
                             <p>{member.profile?.bloodGroup && `🩸 ${member.profile.bloodGroup}`}</p>
                         </div>
                     </div>

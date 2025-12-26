@@ -120,7 +120,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--dark-gray);
+    color: var(--primary-);
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -137,7 +137,7 @@
 }
 
 .event-card-container .view-gallery-btn:hover {
-    color: var(--primary-magenta);
+    color: var(--primary-pink);
     transform: scale(1.1);
 }
 
