@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { firebaseService } from '../../services/firebaseService'
 import { useToast } from '../ui/Toast/ToastContext'
 import { Eye, EyeOff } from 'lucide-react'
-import './Login.css'
+import './MemberLogin.css'
 
 const Login = ({ onLogin }) => {
     const { toast } = useToast()
